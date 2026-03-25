@@ -112,7 +112,7 @@ let finalScore = 0;
 function initPhaser() {
   if (phaserGame) return;
   const config = {
-    type: 1, // CANVAS 강제 지정 (숫자 1은 Phaser.CANVAS를 의미)
+    type: Phaser.CANVAS, // CANVAS 강제 지정 (숫자 1은 Phaser.CANVAS를 의미)
     width: 360, 
     height: 640,
     parent: 'game-container',
