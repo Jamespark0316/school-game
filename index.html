@@ -531,12 +531,20 @@ function replayGame() {
   else restartGame();
 }
 
+function startGame() {
+  document.getElementById('start-overlay').style.display = 'none';
+  // UI가 사라진 후 엔진이 안정적으로 켜지도록 0.1초 지연을 줍니다.
+  setTimeout(() => {
+    if (!phaserGame) initPhaser();
+    else restartGame();
+  }, 100);
+}
+
 function restartGame() {
   const scene = phaserGame.scene.getScene('GameScene');
   if (scene) scene.scene.restart();
   document.getElementById('progress-fill').style.width = '100%';
 }
-
 // ════════════════════════════════════
 //  Supabase: 점수 저장 & 리더보드
 // ════════════════════════════════════
