@@ -78,7 +78,6 @@
 </div>
 
 <script>
-// Supabase 설정
 const SUPABASE_URL = 'https://eossslutugsfmeovpfet.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_oshufwYVp05nC7S9wfo6rA_M7nZx91H';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -86,7 +85,6 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // 별 배경 생성
 (function createStars() {
   const bg = document.getElementById('stars-bg');
-  if(!bg) return;
   for (let i = 0; i < 60; i++) {
     const el = document.createElement('div');
     el.className = 'star-dot';
@@ -96,7 +94,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   }
 })();
 
-// 전화번호 포맷팅
+// 전화번호 포맷
 document.getElementById('input-phone').addEventListener('input', function() {
   let v = this.value.replace(/\D/g, '');
   if (v.length > 11) v = v.slice(0, 11);
@@ -108,35 +106,39 @@ document.getElementById('input-phone').addEventListener('input', function() {
 let phaserGame = null;
 let finalScore = 0;
 
-// Phaser 초기화
+// ════════════════════════════════════
+//  PHASER 3 게임 초기화 및 엔진 실행
+// ════════════════════════════════════
 function initPhaser() {
   if (phaserGame) return;
   const config = {
-    type: Phaser.CANVAS, 
-    width: 360,
+    type: 1, // CANVAS 강제 지정 (숫자 1은 Phaser.CANVAS를 의미)
+    width: 360, 
     height: 640,
     parent: 'game-container',
     backgroundColor: '#0d0d1a',
-    physics: {
-      default: 'arcade',
-      arcade: { debug: false }
+    physics: { 
+      default: 'arcade', 
+      arcade: { debug: false } 
     },
     scene: [GameScene],
-    scale: {
-      mode: Phaser.Scale.FIT,
-      autoCenter: Phaser.Scale.CENTER_BOTH
+    scale: { 
+      mode: Phaser.Scale.FIT, 
+      autoCenter: Phaser.Scale.CENTER_BOTH 
     }
   };
-  
+
+  // DOM 렌더링 지연 방지를 위해 약간의 타이머 후 실행
   setTimeout(() => {
     if (!phaserGame) {
       phaserGame = new Phaser.Game(config);
     }
-  }, 100);
+  }, 150);
 }
 
 function startGame() {
   document.getElementById('start-overlay').style.display = 'none';
+  // UI 전환 안정성을 위해 지연 후 초기화
   setTimeout(() => {
     if (!phaserGame) initPhaser();
     else restartGame();
@@ -158,26 +160,21 @@ function restartGame() {
   }
 }
 
+// ════════════════════════════════════
+//  데이터베이스 연동
+// ════════════════════════════════════
 async function submitScore() {
   const name = document.getElementById('input-name').value.trim();
   const phone = document.getElementById('input-phone').value.trim();
   if (!name || !phone) { showMsg('정보를 입력해주세요.', true); return; }
-  
   const btn = document.getElementById('btn-register');
   btn.disabled = true;
-  btn.textContent = '등록 중...';
-
   try {
     const { error } = await supabaseClient.from('ranking').insert([{ username: name, score: finalScore, phone }]);
     if (error) throw error;
     showMsg('🎉 랭킹 등록 성공!', false);
-    btn.textContent = '✅ 등록 완료';
     await loadLeaderboard();
-  } catch (err) {
-    showMsg('등록 실패. 다시 시도해주세요.', true);
-    btn.disabled = false;
-    btn.textContent = '🏅 랭킹 등록하기';
-  }
+  } catch (err) { showMsg('등록 실패.', true); btn.disabled = false; }
 }
 
 async function loadLeaderboard() {
@@ -186,16 +183,8 @@ async function loadLeaderboard() {
     const wrap = document.getElementById('leaderboard-wrap');
     const list = document.getElementById('leaderboard-list');
     wrap.style.display = 'block';
-    list.innerHTML = data.map((row, i) => `
-      <div style="display:flex; justify-content:space-between; padding:8px 16px; border-bottom:1px solid rgba(255,255,255,0.1);">
-        <span style="color:#ffd700; font-weight:bold;">${i+1}위</span>
-        <span style="color:#fff;">${escapeHtml(row.username)}</span>
-        <span style="color:#ffd700;">${row.score}점</span>
-      </div>
-    `).join('');
-  } catch (e) {
-    console.error(e);
-  }
+    list.innerHTML = data.map((row, i) => `<div style="display:flex; justify-content:space-between; color:#fff; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.1);"><span style="color:#ffd700">${i+1}위</span> <span>${escapeHtml(row.username)}</span> <span style="color:#ffd700">${row.score}점</span></div>`).join('');
+  } catch (e) {}
 }
 
 function showMsg(text, isError) {
@@ -204,51 +193,37 @@ function showMsg(text, isError) {
   el.style.color = isError ? '#ff7f9f' : '#7fffb0';
 }
 
-function escapeHtml(str) {
-  if(!str) return "";
-  return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[m]));
-}
+function escapeHtml(str) { return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[m])); }
 
-// 게임 씬 정의
+// ════════════════════════════════════
+//  게임 씬 (GameScene)
+// ════════════════════════════════════
 class GameScene extends Phaser.Scene {
   constructor() { super({ key: 'GameScene' }); }
-  
   create() {
     this.basket = this.add.rectangle(180, 580, 80, 40, 0x7c6fcd).setStrokeStyle(2, 0xffffff);
     this.physics.add.existing(this.basket, true);
     this.blocks = this.physics.add.group();
-    
-    this.score = 0;
-    this.timeLeft = 60;
-    this.gameOver = false;
-    
-    this.scoreTxt = this.add.text(20, 20, '점수: 0', { fontSize: '20px', fontWeight: 'bold', fill: '#fff' });
-    this.timerTxt = this.add.text(270, 20, '60초', { fontSize: '20px', fontWeight: 'bold', fill: '#ffd700' });
-    
-    this.input.on('pointermove', p => {
-      if(!this.gameOver) this.basket.x = Phaser.Math.Clamp(p.x, 40, 320);
-    });
-    
+    this.score = 0; this.timeLeft = 60; this.gameOver = false;
+    this.scoreTxt = this.add.text(20, 20, '점수: 0', { fontSize: '20px', fill: '#fff', fontWeight: 'bold' });
+    this.timerTxt = this.add.text(260, 20, '60초', { fontSize: '20px', fill: '#ffd700', fontWeight: 'bold' });
+    this.input.on('pointermove', p => { if(!this.gameOver) this.basket.x = Phaser.Math.Clamp(p.x, 40, 320); });
     this.time.addEvent({ delay: 1000, callback: this.spawnBlock, callbackScope: this, loop: true });
     this.time.addEvent({ delay: 1000, callback: this.tick, callbackScope: this, loop: true });
   }
-
   spawnBlock() {
     if (this.gameOver) return;
     const isPos = Math.random() > 0.4;
-    const words = isPos ? ['감사','사랑','격려','소망'] : ['비난','포기','짜증','뒷담'];
+    const words = isPos ? ['감사','사랑','격려','찬양'] : ['비난','포기','짜증','험담'];
     const word = words[Math.floor(Math.random()*words.length)];
-    const x = Math.random() * 280 + 40;
-    
+    const x = Math.random() * 320 + 20;
     const container = this.add.container(x, -20);
     const rect = this.add.rectangle(0, 0, 70, 35, isPos ? 0x2ecc71 : 0xe74c3c).setStrokeStyle(2, 0xffffff);
-    const txt = this.add.text(0, 0, word, { fontSize: '15px', fontWeight: 'bold', fill: '#fff' }).setOrigin(0.5);
-    
+    const txt = this.add.text(0, 0, word, { fontSize: '15px', fill: '#fff', fontWeight: 'bold' }).setOrigin(0.5);
     container.add([rect, txt]);
     this.physics.world.enable(container);
     container.body.setVelocityY(200 + (60 - this.timeLeft) * 2);
     this.blocks.add(container);
-
     this.physics.add.overlap(this.basket, container, () => {
       this.score += isPos ? 10 : -5;
       if(this.score < 0) this.score = 0;
@@ -256,7 +231,6 @@ class GameScene extends Phaser.Scene {
       container.destroy();
     });
   }
-
   tick() {
     if (this.gameOver) return;
     this.timeLeft--;
@@ -264,12 +238,9 @@ class GameScene extends Phaser.Scene {
     document.getElementById('progress-fill').style.width = (this.timeLeft/60*100)+'%';
     if (this.timeLeft <= 0) this.endGame();
   }
-
   endGame() {
     this.gameOver = true;
-    this.physics.pause();
     finalScore = this.score;
-    
     document.getElementById('final-score').textContent = this.score;
     document.getElementById('result-overlay').classList.add('show');
   }
