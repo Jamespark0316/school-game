@@ -531,7 +531,7 @@ async function submitScore() {
 
   try {
     const { error } = await supabaseClient
-      .from('rankings')
+      .from('ranking')
       .insert([{ username: name, score: finalScore, phone }]);
 
     if (error) throw error;
@@ -550,7 +550,7 @@ async function submitScore() {
 async function loadLeaderboard() {
   try {
     const { data, error } = await supabaseClient
-      .from('rankings')
+      .from('ranking')
       .select('username, score')
       .order('score', { ascending: false })
       .limit(10);
