@@ -491,10 +491,33 @@ document.getElementById('input-phone').addEventListener('input', function() {
 let phaserGame = null;
 let finalScore = 0;
 
-function startGame() {
-  document.getElementById('start-overlay').style.display = 'none';
-  if (!phaserGame) initPhaser();
-  else restartGame();
+function initPhaser() {
+  // 1. 이미 게임이 실행 중이면 중복 실행 방지
+  if (phaserGame) return;
+
+  const config = {
+    type: Phaser.CANVAS, // 강제 캔버스 모드 유지
+    width: 360,
+    height: 640,
+    parent: 'game-container',
+    backgroundColor: '#0d0d1a',
+    scene: [GameScene],
+    scale: {
+      mode: Phaser.Scale.FIT, // NONE 대신 FIT을 사용하여 화면 크기에 맞춤
+      autoCenter: Phaser.Scale.CENTER_BOTH
+    },
+    // 물리 엔진 명시적 설정 추가
+    physics: {
+      default: 'arcade',
+      arcade: { debug: false }
+    }
+  };
+
+  // 2. DOM 요소가 확실히 로드된 후 엔진 실행
+  setTimeout(() => {
+    phaserGame = new Phaser.Game(config);
+  }, 100);
+}
 }
 
 function replayGame() {
@@ -595,15 +618,32 @@ function escapeHtml(str) {
 //  PHASER 3 게임
 // ════════════════════════════════════
 function initPhaser() {
+  // 1. 이미 게임이 실행 중이면 중복 실행 방지
+  if (phaserGame) return;
+
   const config = {
-    type: Phaser.CANVAS,
+    type: Phaser.CANVAS, // 강제 캔버스 모드 유지
     width: 360,
     height: 640,
     parent: 'game-container',
     backgroundColor: '#0d0d1a',
     scene: [GameScene],
     scale: {
-      mode: Phaser.Scale.NONE,
+      mode: Phaser.Scale.FIT, // NONE 대신 FIT을 사용하여 화면 크기에 맞춤
+      autoCenter: Phaser.Scale.CENTER_BOTH
+    },
+    // 물리 엔진 명시적 설정 추가
+    physics: {
+      default: 'arcade',
+      arcade: { debug: false }
+    }
+  };
+
+  // 2. DOM 요소가 확실히 로드된 후 엔진 실행
+  setTimeout(() => {
+    phaserGame = new Phaser.Game(config);
+  }, 100);
+}
     }
   };
   phaserGame = new Phaser.Game(config);
