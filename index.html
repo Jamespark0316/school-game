@@ -533,7 +533,7 @@ function replayGame() {
 
 function startGame() {
   document.getElementById('start-overlay').style.display = 'none';
-  // UI가 사라진 후 엔진이 안정적으로 켜지도록 0.1초 지연을 줍니다.
+  // UI가 완전히 닫힌 후 안정적으로 게임을 띄우기 위해 0.1초 지연을 줍니다.
   setTimeout(() => {
     if (!phaserGame) initPhaser();
     else restartGame();
