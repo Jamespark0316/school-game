@@ -155,21 +155,59 @@ window.addEventListener('load', function() {
   document.getElementById('btn-replay').addEventListener('click', replayGame);
   document.getElementById('btn-register').addEventListener('click', submitScore);
 
-  function startGame() {
-    document.getElementById('start-overlay').style.display = 'none';
-    if (!phaserGame) initPhaser();
-    else restartGame();
+  // 1. 카카오 로그인 실행 함수
+async function signInWithKakao() {
+  const { data, error } = await supabaseClient.auth.signInWithOAuth({
+    provider: 'kakao',
+    options: {
+      redirectTo: window.location.origin 
+    }
+  });
+  if (error) alert('로그인 실패: ' + error.message);
+}
+
+// 2. 사용자 정보 확인 함수
+async function checkUser() {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (session) {
+    const userName = session.user.user_metadata.full_name || session.user.user_metadata.name || "익명";
+    return { loggedIn: true, name: userName };
+  }
+  return { loggedIn: false };
+}
+
+// 3. 게임 시작 함수 (기존 158~162번 라인 교체)
+async function startGame() {
+  const user = await checkUser();
+  
+  if (!user.loggedIn) {
+    alert('챌린지 참여를 위해 카카오 로그인이 필요합니다! ✨');
+    await signInWithKakao();
+    return;
   }
 
-  function replayGame() {
-    document.getElementById('result-overlay').classList.remove('show');
-    document.getElementById('status-msg').textContent = '';
-    document.getElementById('btn-register').disabled = false;
-    document.getElementById('btn-register').textContent = '🏅 랭킹 등록하기';
-    document.getElementById('input-name').value = '';
-    document.getElementById('input-phone').value = '';
-    document.getElementById('leaderboard-wrap').style.display = 'none';
+  document.getElementById('start-overlay').style.display = 'none';
+  setTimeout(() => {
+    if (!phaserGame) initPhaser();
+    else restartGame();
+  }, 150);
+}
+
+// 4. 다시하기 함수 (기존 164~172번 라인 교체)
+async function replayGame() {
+  document.getElementById('result-overlay').classList.remove('show');
+  document.getElementById('status-msg').textContent = '';
+  document.getElementById('btn-register').disabled = false;
+  document.getElementById('btn-register').textContent = '🏅 랭킹 등록하기';
+  document.getElementById('leaderboard-wrap').style.display = 'none';
+  
+  const user = await checkUser();
+  if (user.loggedIn) {
     restartGame();
+  } else {
+    startGame();
+  }
+}
   }
 
   function restartGame() {
